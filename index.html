@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aplikasi PJOK Terpadu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #e2e8f0; }
+        .page-hidden { display: none !important; }
+        /* Toast Animation */
+        @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .toast { animation: slideDown 0.3s ease-out forwards; }
+        .login-overlay { position: fixed; inset: 0; z-index: 100; display:flex; align-items:center; justify-content:center; padding: 1.25rem; background:linear-gradient(135deg,#1d4ed8,#0891b2); }
+        .login-card { width:100%; max-width:380px; background:white; border-radius:1.25rem; padding:1.5rem; box-shadow:0 25px 60px #0f172a55; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased h-screen flex justify-center">
+
+    <div id="login-overlay" class="login-overlay">
+      <form id="login-form" class="login-card space-y-4">
+        <div class="text-center">
+          <div class="text-5xl mb-3">🏫</div>
+          <h2 class="text-2xl font-bold text-slate-800">Login Aplikasi PJOK</h2>
+          <p class="text-sm text-slate-500 mt-1">Masuk untuk melanjutkan</p>
+        </div>
+        <div><label for="login-username" class="block text-sm font-semibold mb-1">Username</label><input id="login-username" autocomplete="username" class="w-full p-3 border rounded-lg" required></div>
+        <div><label for="login-password" class="block text-sm font-semibold mb-1">Sandi</label><input id="login-password" type="password" autocomplete="current-password" class="w-full p-3 border rounded-lg" required></div>
+        <p id="login-error" class="hidden text-sm text-red-600">Username atau sandi salah.</p>
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg">Masuk</button>
+        <p class="text-xs text-slate-500 text-center">Sinkronisasi lintas perangkat memerlukan penyimpanan cloud.</p>
+      </form>
+    </div>
+
+    <!-- Notifikasi -->
+    <div id="toast-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-11/12 max-w-md flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Main App Container -->
+    <div class="w-full max-w-md bg-slate-50 h-full flex flex-col shadow-2xl relative overflow-hidden">
+        
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-blue-700 to-cyan-600 text-white p-5 shadow-md flex-shrink-0">
+            <h1 class="font-bold text-xl tracking-tight leading-tight">Aplikasi PJOK Terpadu</h1>
+            <p class="text-sm text-blue-100 font-medium mt-1">Guru: Warsono, S.Pd., Gr.</p>
+            <div class="inline-block mt-2 bg-white/20 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm shadow-sm">
+                UPTD SDN 2 Tanjungsari
+            </div>
+            <button onclick="logout()" class="mt-3 block text-xs bg-white/20 hover:bg-white/30 rounded-lg px-3 py-1.5">Keluar</button>
+        </header>
+
+        <!-- Content Area -->
+        <main class="flex-1 overflow-y-auto p-4 pb-20 relative">
+            
+            <!-- 0. MENU UTAMA -->
+            <div id="page-home" class="grid grid-cols-2 gap-4">
+                <button onclick="nav('absen')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-2 active:scale-95 transition">
+                    <span class="text-4xl">📝</span><span class="font-bold text-sm text-slate-700">Absensi</span>
+                </button>
+                <button onclick="nav('rekap')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-2 active:scale-95 transition">
+                    <span class="text-4xl">📊</span><span class="font-bold text-sm text-slate-700">Rekap Absen</span>
+                </button>
+                <button onclick="nav('kelas')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-2 active:scale-95 transition">
+                    <span class="text-4xl">👥</span><span class="font-bold text-sm text-slate-700">Daftar Kelas</span>
+                </button>
+                <button onclick="nav('jurnal')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-2 active:scale-95 transition">
+                    <span class="text-4xl">📖</span><span class="font-bold text-sm text-slate-700">Jurnal</span>
+                </button>
+                <button onclick="nav('imt')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-2 active:scale-95 transition">
+                    <span class="text-4xl">⚖️</span><span class="font-bold text-sm text-slate-700">Kalkulator IMT</span>
+                </button>
+                <button onclick="nav('sikap')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-2 active:scale-95 transition">
+                    <span class="text-4xl">⚠️</span><span class="font-bold text-sm text-slate-700">Catatan Sikap</span>
+                </button>
+                <button onclick="nav('kesehatan')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-2 active:scale-95 transition">
+                    <span class="text-4xl">🩺</span><span class="font-bold text-sm text-slate-700">Cek Kesehatan</span>
+                </button>
+                <button onclick="nav('prestasi')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-2 active:scale-95 transition">
+                    <span class="text-4xl">🏆</span><span class="font-bold text-sm text-slate-700">Prestasi</span>
+                </button>
+                <button onclick="nav('inventaris')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-2 active:scale-95 transition">
+                    <span class="text-4xl">📦</span><span class="font-bold text-sm text-slate-700">Inventaris</span>
+                </button>
+                <button onclick="nav('nilai')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-2 active:scale-95 transition">
+                    <span class="text-4xl">💯</span><span class="font-bold text-sm text-slate-700">Nilai Harian</span>
+                </button>
+            </div>
+
+            <!-- 1. ABSENSI -->
+            <div id="page-absen" class="page-hidden space-y-4">
+                <div class="flex items-center gap-3"><button onclick="nav('home')" class="bg-white p-2 rounded-lg shadow-sm border text-sm">⬅ Kembali</button><h2 class="font-bold text-lg">Input Absensi</h2></div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border">
+                    <input type="date" id="abs-tgl" class="w-full mb-2 p-2 border rounded-lg">
+                    <select id="abs-kls" onchange="renderAbsenList()" class="w-full p-2 border rounded-lg">
+                        <option value="1">Kelas 1</option><option value="2">Kelas 2</option><option value="3">Kelas 3</option>
+                        <option value="4">Kelas 4</option><option value="5">Kelas 5</option><option value="6">Kelas 6</option>
+                    </select>
+                    <select id="abs-pertemuan" onchange="renderAbsenList()" class="w-full mt-2 p-2 border rounded-lg">
+                        <option value="P1">Pertemuan 1 (P1)</option><option value="P2">Pertemuan 2 (P2)</option><option value="P3">Pertemuan 3 (P3)</option><option value="P4">Pertemuan 4 (P4)</option><option value="P5">Pertemuan 5 (P5)</option>
+                    </select>
+                </div>
+                <div id="abs-list" class="bg-white rounded-xl shadow-sm border divide-y overflow-hidden"></div>
+                <button onclick="simpanAbsen()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-md">Simpan Absen</button>
+            </div>
+
+            <!-- 2. REKAP ABSEN -->
+            <div id="page-rekap" class="page-hidden space-y-4">
+                <div class="flex items-center gap-3"><button onclick="nav('home')" class="bg-white p-2 rounded-lg shadow-sm border text-sm">⬅ Kembali</button><h2 class="font-bold text-lg">Rekap Absen</h2></div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border flex gap-2">
+                    <input type="month" id="rek-bln" class="w-1/2 p-2 border rounded-lg">
+                    <select id="rek-kls" class="w-1/2 p-2 border rounded-lg">
+                        <option value="1">Kelas 1</option><option value="2">Kelas 2</option><option value="3">Kelas 3</option>
+                        <option value="4">Kelas 4</option><option value="5">Kelas 5</option><option value="6">Kelas 6</option>
+                    </select>
+                </div>
+                <button onclick="unduhRekapAbsen()" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl shadow-md">Unduh Excel</button>
+            </div>
+
+            <!-- 3. DAFTAR KELAS -->
+            <div id="page-kelas" class="page-hidden space-y-4">
+                <div class="flex items-center gap-3"><button onclick="nav('home')" class="bg-white p-2 rounded-lg shadow-sm border text-sm">⬅ Kembali</button><h2 class="font-bold text-lg">Daftar Kelas</h2></div>
+                <select id="dk-kls" onchange="renderDaftarKelas()" class="w-full p-2 border rounded-lg bg-white shadow-sm"></select>
+                <div id="dk-list" class="bg-white p-4 rounded-xl shadow-sm border space-y-2"></div>
+            </div>
+
+            <!-- 4. JURNAL & RPP -->
+            <div id="page-jurnal" class="page-hidden space-y-4">
+                <div class="flex items-center gap-3"><button onclick="nav('home')" class="bg-white p-2 rounded-lg shadow-sm border text-sm">⬅ Kembali</button><h2 class="font-bold text-lg">Jurnal</h2></div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border space-y-3">
+                    <input type="hidden" id="jur-id">
+                    <input type="date" id="jur-tgl" class="w-full p-2 border rounded-lg">
+                    <div class="flex gap-2">
+                        <select id="jur-kls" onchange="updateMateri()" class="w-1/2 p-2 border rounded-lg"></select>
+                        <select id="jur-smt" onchange="updateMateri()" class="w-1/2 p-2 border rounded-lg"><option value="1">Smt 1</option><option value="2">Smt 2</option></select>
+                    </div>
+                    <textarea id="jur-materi" placeholder="Tujuan Pembelajaran" class="w-full p-2 border rounded-lg h-20"></textarea>
+                    <textarea id="jur-kegiatan" placeholder="Kegiatan Pembelajaran" class="w-full p-2 border rounded-lg h-20"></textarea>
+                    <textarea id="jur-asesmen" placeholder="Asesmen" class="w-full p-2 border rounded-lg h-20"></textarea>
+                    <textarea id="jur-refleksi" placeholder="Refleksi" class="w-full p-2 border rounded-lg h-20"></textarea>
+                    <button onclick="simpanJurnal()" class="w-full bg-indigo-600 text-white font-bold py-2 rounded-lg">Simpan Jurnal</button>
+                    <button onclick="unduhJurnal()" class="w-full bg-green-600 text-white font-bold py-2 rounded-lg">Unduh Semua Jurnal (Excel)</button>
+                </div>
+                <div id="jur-list" class="space-y-2"></div>
+            </div>
+
+            <!-- 5. IMT -->
+            <div id="page-imt" class="page-hidden space-y-4">
+                <div class="flex items-center gap-3"><button onclick="nav('home')" class="bg-white p-2 rounded-lg shadow-sm border text-sm">⬅ Kembali</button><h2 class="font-bold text-lg">Kalkulator IMT</h2></div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border space-y-3">
+                    <div><label class="text-sm text-slate-500">Berat Badan (Kg)</label><input type="number" id="imt-bb" class="w-full p-2 border rounded-lg"></div>
+                    <div><label class="text-sm text-slate-500">Tinggi Badan (Cm)</label><input type="number" id="imt-tb" class="w-full p-2 border rounded-lg"></div>
+                    <button onclick="hitungIMT()" class="w-full bg-pink-600 text-white font-bold py-3 rounded-lg">Hitung IMT</button>
+                </div>
+                <div id="imt-hasil" class="hidden bg-white p-4 rounded-xl shadow-sm border text-center">
+                    <p class="text-sm text-slate-500">Nilai IMT:</p>
+                    <p id="imt-skor" class="text-4xl font-bold my-2"></p>
+                    <span id="imt-kat" class="px-3 py-1 rounded-full text-white text-sm font-bold"></span>
+                </div>
+            </div>
+
+            <!-- 6. CATATAN SIKAP -->
+            <div id="page-sikap" class="page-hidden space-y-4">
+                <div class="flex items-center gap-3"><button onclick="nav('home')" class="bg-white p-2 rounded-lg shadow-sm border text-sm">⬅ Kembali</button><h2 class="font-bold text-lg">Catatan Sikap</h2></div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border space-y-3">
+                    <input type="date" id="sik-tgl" class="w-full p-2 border rounded-lg">
+                    <select id="sik-kls" onchange="populateSiswa('sik-siswa', this.value)" class="w-full p-2 border rounded-lg"></select>
+                    <select id="sik-siswa" class="w-full p-2 border rounded-lg"></select>
+                    <textarea id="sik-catatan" placeholder="Catatan Sikap/Pelanggaran..." class="w-full p-2 border rounded-lg"></textarea>
+                    <button onclick="simpanData('sikap', ['tgl','kls','siswa','catatan'])" class="w-full bg-orange-500 text-white font-bold py-2 rounded-lg">Simpan</button>
+                    <button onclick="unduhData('sikap', 'Catatan_Sikap')" class="w-full bg-green-600 text-white font-bold py-2 rounded-lg">Unduh Excel</button>
+                </div>
+                <div id="sikap-list" class="space-y-2"></div>
+            </div>
+
+            <!-- 7. CEK KESEHATAN -->
+            <div id="page-kesehatan" class="page-hidden space-y-4">
+                <div class="flex items-center gap-3"><button onclick="nav('home')" class="bg-white p-2 rounded-lg shadow-sm border text-sm">⬅ Kembali</button><h2 class="font-bold text-lg">Cek Kesehatan</h2></div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border space-y-3 text-sm">
+                    <input type="date" id="kes-tgl" class="w-full p-2 border rounded-lg">
+                    <select id="kes-kls" onchange="populateSiswa('kes-siswa', this.value)" class="w-full p-2 border rounded-lg"></select>
+                    <select id="kes-siswa" class="w-full p-2 border rounded-lg"></select>
+                    <select id="kes-jk" class="w-full p-2 border rounded-lg"><option value="L">Laki-laki</option><option value="P">Perempuan</option></select>
+                    <div class="flex gap-2">
+                        <input type="number" id="kes-tb" placeholder="TB (cm)" class="w-1/3 p-2 border rounded-lg">
+                        <input type="number" id="kes-bb" placeholder="BB (kg)" class="w-1/3 p-2 border rounded-lg">
+                        <input type="number" id="kes-nadi" placeholder="Nadi/mnt" class="w-1/3 p-2 border rounded-lg">
+                    </div>
+                    <input type="text" id="kes-mata" placeholder="Kondisi Mata" class="w-full p-2 border rounded-lg">
+                    <input type="text" id="kes-telinga" placeholder="Kondisi Telinga" class="w-full p-2 border rounded-lg">
+                    <input type="text" id="kes-kulit" placeholder="Kondisi Kulit" class="w-full p-2 border rounded-lg">
+                    <input type="text" id="kes-kuku" placeholder="Kondisi Kuku" class="w-full p-2 border rounded-lg">
+                    <input type="text" id="kes-rambut" placeholder="Kondisi Rambut" class="w-full p-2 border rounded-lg">
+                    <input type="text" id="kes-keluhan" placeholder="Keluhan 1 Bulan Terakhir" class="w-full p-2 border rounded-lg">
+                    <button onclick="simpanData('kesehatan', ['tgl','kls','siswa','jk','tb','bb','nadi','mata','telinga','kulit','kuku','rambut','keluhan'])" class="w-full bg-rose-500 text-white font-bold py-2 rounded-lg">Simpan</button>
+                    <button onclick="unduhData('kesehatan', 'Data_Kesehatan')" class="w-full bg-green-600 text-white font-bold py-2 rounded-lg">Unduh Excel</button>
+                </div>
+                <div id="kesehatan-list" class="space-y-2"></div>
+            </div>
+
+            <!-- 8. PRESTASI -->
+            <div id="page-prestasi" class="page-hidden space-y-4">
+                <div class="flex items-center gap-3"><button onclick="nav('home')" class="bg-white p-2 rounded-lg shadow-sm border text-sm">⬅ Kembali</button><h2 class="font-bold text-lg">Prestasi Siswa</h2></div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border space-y-3">
+                    <input type="date" id="pres-tgl" class="w-full p-2 border rounded-lg">
+                    <select id="pres-kls" onchange="populateSiswa('pres-siswa', this.value)" class="w-full p-2 border rounded-lg"></select>
+                    <select id="pres-siswa" class="w-full p-2 border rounded-lg"></select>
+                    <input type="text" id="pres-lomba" placeholder="Nama Lomba/Kejuaraan" class="w-full p-2 border rounded-lg">
+                    <input type="text" id="pres-hasil" placeholder="Hasil (Juara 1, dll)" class="w-full p-2 border rounded-lg">
+                    <button onclick="simpanData('prestasi', ['tgl','kls','siswa','lomba','hasil'])" class="w-full bg-yellow-500 text-white font-bold py-2 rounded-lg">Simpan</button>
+                    <button onclick="unduhData('prestasi', 'Data_Prestasi')" class="w-full bg-green-600 text-white font-bold py-2 rounded-lg">Unduh Excel</button>
+                </div>
+                <div id="prestasi-list" class="space-y-2"></div>
+            </div>
+
+            <!-- 9. INVENTARIS -->
+            <div id="page-inventaris" class="page-hidden space-y-4">
+                <div class="flex items-center gap-3"><button onclick="nav('home')" class="bg-white p-2 rounded-lg shadow-sm border text-sm">⬅ Kembali</button><h2 class="font-bold text-lg">Inventaris Barang</h2></div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border space-y-3">
+                    <input type="text" id="inv-barang" placeholder="Nama Barang (Cth: Bola Voli)" class="w-full p-2 border rounded-lg">
+                    <div class="flex gap-2">
+                        <input type="number" id="inv-jml" placeholder="Jumlah" class="w-1/2 p-2 border rounded-lg">
+                        <select id="inv-kondisi" class="w-1/2 p-2 border rounded-lg"><option>Baik</option><option>Rusak Ringan</option><option>Rusak Berat</option></select>
+                    </div>
+                    <button onclick="simpanData('inventaris', ['barang','jml','kondisi'])" class="w-full bg-stone-600 text-white font-bold py-2 rounded-lg">Simpan</button>
+                    <button onclick="unduhData('inventaris', 'Data_Inventaris')" class="w-full bg-green-600 text-white font-bold py-2 rounded-lg">Unduh Excel</button>
+                </div>
+                <div id="inventaris-list" class="space-y-2"></div>
+            </div>
+
+            <!-- 10. NILAI HARIAN -->
+            <div id="page-nilai" class="page-hidden space-y-4">
+                <div class="flex items-center gap-3"><button onclick="nav('home')" class="bg-white p-2 rounded-lg shadow-sm border text-sm">⬅ Kembali</button><h2 class="font-bold text-lg">Nilai Harian</h2></div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border space-y-2">
+                    <input type="date" id="nil-tgl" class="w-full p-2 border rounded-lg">
+                    <select id="nil-kls" onchange="renderNilaiList()" class="w-full p-2 border rounded-lg"></select>
+                    <input type="text" id="nil-materi" placeholder="Materi / Topik Penilaian" class="w-full p-2 border rounded-lg">
+                </div>
+                <div id="nil-list" class="bg-white rounded-xl shadow-sm border divide-y overflow-hidden p-2 space-y-2"></div>
+                <button onclick="simpanNilai()" class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl shadow-md">Simpan Nilai</button>
+                <button onclick="unduhNilai()" class="w-full bg-green-600 text-white font-bold py-2 rounded-xl shadow-md mt-2">Unduh Rekap Nilai</button>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // Login sederhana untuk aplikasi lokal. Untuk keamanan nyata, autentikasi harus dilakukan di server.
+        const APP_USERNAME = 'warsono';
+        const APP_PASSWORD = 'riliano';
+        const AUTH_KEY = 'pjok_logged_in';
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const u = document.getElementById('login-username').value.trim();
+            const p = document.getElementById('login-password').value;
+            if (u === APP_USERNAME && p === APP_PASSWORD) {
+                sessionStorage.setItem(AUTH_KEY, '1');
+                document.getElementById('login-overlay').classList.add('hidden');
+                document.getElementById('login-error').classList.add('hidden');
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        });
+        function logout() {
+            sessionStorage.removeItem(AUTH_KEY);
+            document.getElementById('login-overlay').classList.remove('hidden');
+            document.getElementById('login-password').value = '';
+        }
+        if (sessionStorage.getItem(AUTH_KEY) === '1') document.getElementById('login-overlay').classList.add('hidden');
+
+        // --- DATA SISWA (Dari File Excel Asli Kelas 1-6) ---
+        const students = {
+            "1": [
+                "ABDUL AZIS", "AHMAD QOYYUBI MAJID", "ALIKA NAILA PUTRI", "ARFA HAJID AL ABIZHAR", "ARROYYAN THORIQ A",
+                "AYUNA TALITA MAHERA", "AZHRA HIDAYATULLAH", "AZKHA ADZAN RABANI", "BANYU LOUIBHAKTI A D", "FATIMAH AZ ZAHRO",
+                "GHEANDRA BENING H", "HANANDAFI ELNATHAN Q", "IBRAHIM SANDRINA", "JILFAH ASSIYFAH", "LINTANG WULANDARI",
+                "MUHAMMAD ALFIN NI'AM", "MUHAMMAD RAFFA S", "NUR MEGA", "NURHAYATI", "PUTRI FARDIYANTI R", "RANTIKA GRACE AZMI",
+                "RIZKIYA PUTRI", "RIZKYAWAN", "UNAINIDDIYA SAFIYYA H", "YASEER ARRAFAT"
+            ],
+            "2": [
+                "ADIBAH SYAKILA", "ADRIYAN WIJAYA KUSUMA", "ALIF RIZKY", "AUFAA NABIHAH SIERA", "AULIA SHAFIRAH",
+                "AZKA RAFFASYA RAMADHAN", "AZZAM AL FAHRIZI", "BAGUS SANJAYA", "CELIN KEYSA AGUSTIN", "CHANDRA IKHWAN ALFARIZQI",
+                "FATHIRA AGHNIA", "FEBI ALFIYAH", "KHANZA ADIFA ALFIANA", "KIRANA SABILA", "LIDIYA AISYAH", "MARSYA MARSELLA",
+                "MONIKA", "MUKHAMMAD SALAMUN SYAFI'I", "NAZRIL ARTA NABIL", "PUTRI SEVILLA", "RIDHOAN ABDUL GHONI", "RIZKI AIDIL",
+                "SAEFUDIN", "SYAID RAMADANI", "TANTI YOSEFAH", "TIARA RAHAYU", "VANESSA ALFIRA", "VAVA OKTA VIA", "VELISHA KANAYA QUEENSHA",
+                "YUSUF RAMDHAN MAULANA", "ZIHAN FAHIRA"
+            ],
+            "3": [
+                "AHMAD ADI MAULANA IBRAHIM", "AHMAD FAIZ RIYADIN", "AIRA SYIFA MEHRUNNISA", "AISHWA NAHLA", "ARSYILAH NADZIFATUN NI'AM",
+                "BAGAS SATRIO", "BASHIROH NURUL FADILAH", "DINDA HALWA RAMADHANI", "FADLI SANJAYA", "FATHAN SANTANA", "FATHIN AZZUHRAH",
+                "FELLAH KAMALIYA ANSANI", "HIDAYATUROHMAN", "LILY LAIFATUL JANNAH", "MELISA HAFYAH", "MISYATI", "MOHAMMAD RIZKY ATALLAH",
+                "MOZA OKTAVIANI", "MUHAMAD TAUFIK", "MUHAMMAD DAFFA AL-FARIZI", "MUHAMMAD HAFIZH ALTAF G", "MUHAMMAD NAUFAL ALFARIZI",
+                "MUHAMMAD YUSUP", "NADILA SYAFITRI", "NAJWA ANINDYA", "NURHADI", "RICKY BASTIAN", "SALSABILA PUTRI", "SAVA NUR ADHWA",
+                "SHARIP HIDAYAT", "SYIVA NUR ADHA", "TANIYAH RAHMA", "TANTO WIJAYA SAPUTRA", "TITIK SARI DESWITA", "ULIL ILMI", "VANIA SAHI",
+                "WILLY SYAPUTRA", "WINATA ALVAIK"
+            ],
+            "4": [
+                "ABIZARD FARAZ RAUFA", "ALIKAH NESYA HAYAT PUTRI", "DEA SILVIYANTI", "DIMAS ALFARIZI", "FAHRIZAL", "FIKA ANGELIA",
+                "KHALISA SANDRINA", "MUHAMMAD AZAM YAFIQ", "MUHAMAD VIRLI TASBIKH", "NASRI'ATUN MARWAH", "SYAFIQ MAULANA", "YASMIN ADIBAH",
+                "ZHULFANA FEBRYANTI", "MUHAMAD ALIF", "AMANDA MADHU SANTIKA", "GIBRAN ARIANSYAH", "MUHAMMAD AL FAROUQ"
+            ],
+            "5": [
+                "ABQORI AGAM", "ADELIA PRISCILLA FARAHDILLA", "ADITYA RIFQI RAMADHAN", "AIDA AIRA", "APRIDAS", "ATIKA ZAHRA RATIFFA",
+                "BILQIS RIFDA", "ELIS APRIYANTI", "FATHAN ALFAREZY", "FITRI RAMADANI", "INESYA PUTRI", "JIHAN", "KHAERUL HADI RAHMAT",
+                "KHALISA AZZAHRA AHMAD", "KHUSNUL KHOTIMAH", "KOMALASARI", "MARWAH CARISA SARI", "MUHAMMAD AL HAFIZ", "MUHAMMAD ALI NIJAM",
+                "NADYA AULIA RACHMAH", "NUR ALIFA AIDILLAH", "NUR AQILAH", "NUR FADLI", "NURLELA", "PRAMODYA CONSTANTINE", "RADEN RAFA SYAHPUTRA",
+                "ROSINDA NUR HIJRIYAH", "SABIHISMA FARDYANSYAH ENDANG", "SARIF SAFI'I", "SAFIRAH VANESA", "TARI AGUSTIN", "ALLESHA EL DIRA",
+                "MUHAMMAD NAUFAL A", "TEDI ADITIA"
+            ],
+            "6": [
+                "ABDUL WALID ALI KHAER", "ALVIN BAHRUL ALAM", "ALWI SIHAB", "ANGGI ANGGRAENI", "DIDIT WIDODO", "ESTU NAYA PERMATA SARI",
+                "HAFIZ NUGRAHA", "KRISNA", "MELINDA PUTRI FADILAH", "MUHAMMAD HAFIZ ALFARIZI", "NUR NAYLA SARI", "RIDWAN HABIBI", "SAFIAH",
+                "SITI MAEMUNAH", "SOFI", "SOFIYAH", "TUTI APRIL NINDAYANI", "ULFIYAH", "ZHULAEKHA AYU AGUSTINA", "RENDY HIDAYAT", "DIANAH AZZAHRA",
+                "KAMILA WAHIDAH"
+            ]
+        };
+
+        const materiKurikulum = {
+            "1": { "1": ["Gerak Dasar Lokomotor", "Gerak Dasar Nonlokomotor", "Gerak Manipulatif", "Sikap Tubuh"], "2": ["Senam Lantai", "Gerak Dasar dengan Irama", "Mengenal Aktivitas Air", "Tubuh Kita"] },
+            "2": { "1": ["Variasi Gerak Dasar Lokomotor", "Variasi Gerak Dasar Nonlokomotor", "Variasi Gerak Dasar Manipulatif", "Keseimbangan, Kelenturan, Kekuatan"], "2": ["Senam Lantai", "Gerak Berirama", "Aktivitas Air", "Kebersihan Lingkungan"] },
+            "3": { "1": ["Kombinasi Gerak Dasar Lokomotor", "Kombinasi Gerak Dasar Nonlokomotor", "Kombinasi Gerak Dasar Manipulatif", "Gerak Keseimbangan"], "2": ["Senam Lantai", "Gerak Lokomotor dan Nonlokomotor", "Aktivitas Air", "Kesehatan Tubuh"] },
+            "4": { "1": ["Jalan Cepat, Lari Sprint, Lompat", "Aktivitas Gerak Nonlokomotor", "Melempar dan Menangkap Bola", "Senam Lantai"], "2": ["Gerak Senam Berirama", "Kebugaran Tubuh", "Renang Gaya Dada", "Kebersihan dan Kesehatan Tubuh"] },
+            "5": { "1": ["Jalan, Lari, Lompat, Lempar", "Permainan Bola Besar", "Permainan Bola Kecil", "Senam Menggunakan Alat"], "2": ["Senam Ritmik", "Renang Gaya Dada", "Kebugaran Jasmani", "Bahaya Merokok, Miras, Napza"] },
+            "6": { "1": ["Aktivitas Atletik", "Permainan Bola Besar", "Permainan Bola Kecil", "Bela Diri Pencak Silat"], "2": ["Aktivitas Senam", "Gerak Berirama", "Renang Gaya Dada & Penyelamatan", "Kebugaran Jasmani", "Bahaya Narkoba"] }
+        };
+
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        // --- INIT SELECT OPTIONS ---
+        function initSelects() {
+            const clsOpts = [1,2,3,4,5,6].map(i => `<option value="${i}">Kelas ${i}</option>`).join('');
+            ['dk-kls','jur-kls','sik-kls','kes-kls','pres-kls','nil-kls'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.innerHTML = clsOpts;
+            });
+            ['abs-tgl','jur-tgl','sik-tgl','kes-tgl','pres-tgl','nil-tgl'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.value = todayStr;
+            });
+        }
+        initSelects();
+
+        function populateSiswa(selectId, kls) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = students[kls].map(nama => `<option value="${nama}">${nama}</option>`).join('');
+        }
+
+        // --- UTIL: TOAST ---
+        function showToast(msg) {
+            const c = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = "bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium toast pointer-events-auto flex justify-between items-center";
+            t.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()">✕</button>`;
+            c.appendChild(t);
+            setTimeout(() => { if(t.parentElement) t.remove(); }, 3000);
+        }
+
+        // --- UTIL: NAVIGATION ---
+        function nav(page) {
+            document.querySelectorAll('main > div').forEach(el => el.classList.add('page-hidden'));
+            document.getElementById('page-' + page).classList.remove('page-hidden');
+            
+            if(page === 'absen') renderAbsenList();
+            if(page === 'kelas') renderDaftarKelas();
+            if(page === 'jurnal') { updateMateri(); renderDataList('jurnal'); }
+            if(page === 'sikap') { populateSiswa('sik-siswa', '1'); renderDataList('sikap'); }
+            if(page === 'kesehatan') { populateSiswa('kes-siswa', '1'); renderDataList('kesehatan'); }
+            if(page === 'prestasi') { populateSiswa('pres-siswa', '1'); renderDataList('prestasi'); }
+            if(page === 'inventaris') renderDataList('inventaris');
+            if(page === 'nilai') renderNilaiList();
+        }
+
+        // --- UTIL: EXCEL EXPORT ---
+        function exportExcel(htmlTable, filename) {
+            const blob = new Blob([`<html xmlns:x="urn:schemas-microsoft-com:office:excel"><body>${htmlTable}</body></html>`], { type: 'application/vnd.ms-excel' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename + '.xls';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+
+        // ================= FITUR 1: ABSENSI =================
+        function renderAbsenList() {
+            const kls = document.getElementById('abs-kls').value;
+            const tgl = document.getElementById('abs-tgl').value;
+            const pertemuan = document.getElementById('abs-pertemuan').value;
+            const list = document.getElementById('abs-list');
+            const data = JSON.parse(localStorage.getItem('pjok_absen')) || {};
+            list.innerHTML = students[kls].map(nama => {
+                const status = data[tgl]?.[kls]?.[pertemuan]?.[nama] || '';
+                return `<div class="flex justify-between items-center p-3" data-nama="${nama}" data-status="${status}">
+                    <span class="text-sm font-medium w-1/2 truncate">${nama}</span>
+                    <div class="flex gap-1">
+                        ${['H','I','S','A'].map(st => `<button onclick="setAbsen(this, '${st}')" class="w-8 h-8 rounded text-xs font-bold ${status===st ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800'}">${st}</button>`).join('')}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        function setAbsen(btn, val) {
+            const row = btn.parentElement.parentElement;
+            btn.parentElement.querySelectorAll('button').forEach(b => {
+                b.className = "w-8 h-8 rounded text-xs font-bold bg-slate-100 text-slate-800";
+            });
+            btn.className = "w-8 h-8 rounded text-xs font-bold bg-blue-600 text-white";
+            row.dataset.status = val;
+        }
+        function simpanAbsen() {
+            const kls = document.getElementById('abs-kls').value;
+            const tgl = document.getElementById('abs-tgl').value;
+            const pertemuan = document.getElementById('abs-pertemuan').value;
+            let data = JSON.parse(localStorage.getItem('pjok_absen')) || {};
+            if(!data[tgl]) data[tgl] = {};
+            if(!data[tgl][kls]) data[tgl][kls] = {};
+            if(!data[tgl][kls][pertemuan]) data[tgl][kls][pertemuan] = {};
+            for(const row of document.getElementById('abs-list').children) {
+                const nama = row.dataset.nama;
+                const status = row.dataset.status || '';
+                if(status) data[tgl][kls][pertemuan][nama] = status;
+                else delete data[tgl][kls][pertemuan][nama];
+            }
+            localStorage.setItem('pjok_absen', JSON.stringify(data));
+            showToast('Absen Disimpan!');
+        }
+
+        // ================= FITUR 2: REKAP ABSEN =================
+        function unduhRekapAbsen() {
+            const kls = document.getElementById('rek-kls').value;
+            const bln = document.getElementById('rek-bln').value;
+            const data = JSON.parse(localStorage.getItem('pjok_absen')) || {};
+            let table = `<table border="1"><tr><th>No.</th><th>Nama</th><th>P1</th><th>P2</th><th>P3</th><th>P4</th><th>P5</th></tr>`;
+            students[kls].forEach((nama, i) => {
+                const statuses = ['P1','P2','P3','P4','P5'].map(p => {
+                    let found = '';
+                    Object.keys(data).sort().forEach(tgl => {
+                        if(bln && !tgl.startsWith(bln)) return;
+                        const entry = data[tgl]?.[kls];
+                        if(entry?.[p]?.[nama]) found = entry[p][nama];
+                        // Support attendance saved by the previous version where one date was stored without a meeting label.
+                        else if(entry?.[nama] && !found) found = entry[nama];
+                    });
+                    return found;
+                });
+                table += `<tr><td>${i+1}</td><td>${nama}</td>${statuses.map(st => `<td>${st}</td>`).join('')}</tr>`;
+            });
+            table += `</table>`;
+            exportExcel(table, `Rekap_Absen_Kls${kls}_${bln||'Semua'}`);
+        }
+
+        // ================= FITUR 3: KELAS =================
+        function renderDaftarKelas() {
+            const kls = document.getElementById('dk-kls').value;
+            const list = document.getElementById('dk-list');
+            list.innerHTML = students[kls].map((n, i) => `<div class="p-2 border-b text-sm">${i+1}. ${n}</div>`).join('');
+        }
+
+        // ================= FITUR 4: JURNAL =================
+        function updateMateri() {
+            // Tujuan pembelajaran diisi manual agar sesuai kegiatan dan kelas.
+        }
+        function simpanJurnal() {
+            const id = Date.now().toString();
+            const tgl = document.getElementById('jur-tgl').value;
+            const obj = {
+                id, tgl,
+                kls: document.getElementById('jur-kls').value,
+                smt: document.getElementById('jur-smt').value,
+                materi: document.getElementById('jur-materi').value,
+                kegiatan: document.getElementById('jur-kegiatan').value,
+                asesmen: document.getElementById('jur-asesmen').value,
+                refleksi: document.getElementById('jur-refleksi').value
+            };
+            if(!tgl || !obj.materi || !obj.kegiatan || !obj.asesmen || !obj.refleksi) {
+                showToast('Lengkapi data jurnal!');
+                return;
+            }
+            let data = JSON.parse(localStorage.getItem('pjok_jurnal')) || [];
+            data.push(obj);
+            localStorage.setItem('pjok_jurnal', JSON.stringify(data));
+            showToast('Jurnal Disimpan!');
+            renderDataList('jurnal');
+        }
+        function unduhJurnal() {
+            const data = JSON.parse(localStorage.getItem('pjok_jurnal')) || [];
+            let t = `<table border="1"><tr><th>No.</th><th>Hari, Tanggal</th><th>Tujuan Pembelajaran</th><th>Kegiatan Pembelajaran</th><th>Asesmen</th><th>Refleksi</th></tr>`;
+            data.forEach((d, i) => {
+                const date = d.tgl ? new Date(d.tgl + 'T00:00:00') : null;
+                const hari = date ? ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][date.getDay()] : '';
+                const tanggal = date ? `${hari}, ${d.tgl}` : '';
+                t += `<tr><td>${i+1}</td><td>${tanggal}</td><td>${d.materi || ''}</td><td>${d.kegiatan || d.catatan || ''}</td><td>${d.asesmen || ''}</td><td>${d.refleksi || ''}</td></tr>`;
+            });
+            exportExcel(t + "</table>", "Rekap_Jurnal");
+        }
+
+        // ================= FITUR 5: IMT =================
+        function hitungIMT() {
+            const bb = parseFloat(document.getElementById('imt-bb').value);
+            const tb = parseFloat(document.getElementById('imt-tb').value) / 100;
+            if(!bb || !tb) return;
+            const imt = (bb / (tb * tb)).toFixed(1);
+            let kat = "Obesitas", col = "bg-red-500";
+            if(imt < 18.5) { kat = "Kurus"; col = "bg-yellow-500"; }
+            else if(imt <= 24.9) { kat = "Normal"; col = "bg-green-500"; }
+            else if(imt <= 29.9) { kat = "Gemuk"; col = "bg-orange-500"; }
+            document.getElementById('imt-skor').innerText = imt;
+            document.getElementById('imt-kat').innerText = kat;
+            document.getElementById('imt-kat').className = `px-3 py-1 rounded-full text-white text-sm font-bold ${col}`;
+            document.getElementById('imt-hasil').classList.remove('hidden');
+        }
+
+        // ================= FITUR 10: NILAI =================
+        function renderNilaiList() {
+            const kls = document.getElementById('nil-kls').value;
+            const tgl = document.getElementById('nil-tgl').value;
+            const data = JSON.parse(localStorage.getItem('pjok_nilai')) || {};
+            const list = document.getElementById('nil-list');
+            list.innerHTML = students[kls].map(nama => {
+                const val = data[tgl]?.[kls]?.[nama] || '';
+                return `<div class="flex justify-between items-center p-2" data-nama="${nama}">
+                    <span class="text-sm font-medium w-1/2 truncate">${nama}</span>
+                    <input type="number" class="w-20 p-1 border rounded text-center nil-input" value="${val}" placeholder="0-100">
+                </div>`;
+            }).join('');
+        }
+        function simpanNilai() {
+            const kls = document.getElementById('nil-kls').value;
+            const tgl = document.getElementById('nil-tgl').value;
+            const materi = document.getElementById('nil-materi').value;
+            let data = JSON.parse(localStorage.getItem('pjok_nilai')) || {};
+            if(!data[tgl]) data[tgl] = {};
+            if(!data[tgl][kls]) data[tgl][kls] = {};
+            
+            const rows = document.getElementById('nil-list').children;
+            for(let row of rows) {
+                const nama = row.dataset.nama;
+                const val = row.querySelector('.nil-input').value;
+                data[tgl][kls][nama] = val;
+            }
+            // Simpan materi juga agar rapi di rekap
+            let meta = JSON.parse(localStorage.getItem('pjok_nilai_meta')) || {};
+            meta[`${tgl}_${kls}`] = materi;
+            localStorage.setItem('pjok_nilai_meta', JSON.stringify(meta));
+            
+            localStorage.setItem('pjok_nilai', JSON.stringify(data));
+            showToast('Nilai Disimpan!');
+        }
+        function unduhNilai() {
+            const data = JSON.parse(localStorage.getItem('pjok_nilai')) || {};
+            const meta = JSON.parse(localStorage.getItem('pjok_nilai_meta')) || {};
+            let t = `<table border="1"><tr><th>Tanggal</th><th>Kelas</th><th>Materi</th><th>Nama</th><th>Nilai</th></tr>`;
+            for(let tgl in data) {
+                for(let kls in data[tgl]) {
+                    let m = meta[`${tgl}_${kls}`] || "-";
+                    for(let nama in data[tgl][kls]) {
+                        t += `<tr><td>${tgl}</td><td>${kls}</td><td>${m}</td><td>${nama}</td><td>${data[tgl][kls][nama]}</td></tr>`;
+                    }
+                }
+            }
+            exportExcel(t + "</table>", "Rekap_Nilai");
+        }
+
+        // ================= GENERAL CRUD (SIKAP, KES, PRES, INV) =================
+        function simpanData(key, fields) {
+            let data = JSON.parse(localStorage.getItem(`pjok_${key}`)) || [];
+            let obj = { id: Date.now().toString() };
+            let valid = true;
+            fields.forEach(f => {
+                let el = document.getElementById(`${key.substring(0,3)}-${f}`);
+                if(el) { obj[f] = el.value; if(!el.value && f!=='keluhan') valid = false; }
+            });
+            if(!valid) { showToast('Lengkapi Data!'); return; }
+            data.push(obj);
+            localStorage.setItem(`pjok_${key}`, JSON.stringify(data));
+            showToast('Data Disimpan!');
+            fields.forEach(f => { let el=document.getElementById(`${key.substring(0,3)}-${f}`); if(el && el.tagName!=='SELECT' && el.type!=='date') el.value=''; });
+            renderDataList(key);
+        }
+
+        function renderDataList(key) {
+            const list = document.getElementById(`${key}-list`);
+            if(!list) return;
+            let data = JSON.parse(localStorage.getItem(`pjok_${key}`)) || [];
+            list.innerHTML = data.reverse().map(d => {
+                let text = key === 'jurnal' ? `${d.tgl || ''} | ${d.materi || ''} | ${d.kegiatan || d.catatan || ''} | ${d.asesmen || ''} | ${d.refleksi || ''}` : Object.values(d).filter(v => v !== d.id).join(' | ');
+                return `<div class="bg-white p-3 rounded-lg border text-xs shadow-sm flex justify-between items-center">
+                    <span class="truncate w-4/5">${text}</span>
+                    <button onclick="hapusData('${key}', '${d.id}')" class="text-red-500 font-bold px-2">X</button>
+                </div>`;
+            }).join('');
+        }
+
+        function hapusData(key, id) {
+            let data = JSON.parse(localStorage.getItem(`pjok_${key}`)) || [];
+            data = data.filter(d => d.id !== id);
+            localStorage.setItem(`pjok_${key}`, JSON.stringify(data));
+            renderDataList(key);
+            showToast('Data Dihapus');
+        }
+
+        function unduhData(key, filename) {
+            let data = JSON.parse(localStorage.getItem(`pjok_${key}`)) || [];
+            if(data.length === 0) return showToast('Kosong');
+            let t = `<table border="1"><tr>`;
+            Object.keys(data[0]).filter(k=>k!=='id').forEach(k => t+=`<th>${k}</th>`);
+            t += `</tr>`;
+            data.forEach(d => {
+                t += `<tr>`;
+                Object.keys(d).filter(k=>k!=='id').forEach(k => t+=`<td>${d[k]}</td>`);
+                t += `</tr>`;
+            });
+            exportExcel(t+"</table>", filename);
+        }
+
+    </script>
+</body>
+</html>
